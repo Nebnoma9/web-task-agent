@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ops Metrics – Dashboard</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+</head>
+<body>
+  <header class="site"><a href="index.html">Ops Metrics</a><nav aria-label="Main"><a href="index.html">Overview</a></nav></header>
+  <main>
+    <h1>Weekly overview</h1>
+    <div class="toolbar" role="toolbar" aria-label="Dashboard actions">
+      <label for="range" style="margin:0;align-self:center">Range</label>
+      <select id="range" style="width:auto">
+        <option value="7d">Last 7 days</option>
+        <option value="30d">Last 30 days</option>
+      </select>
+      <button id="refresh" type="button">Refresh data</button>
+      <button id="export" type="button">Export CSV</button>
+    </div>
+    <p id="last-updated" class="muted" role="status">Last updated: never</p>
+    <section class="kpis" aria-label="Key metrics">
+      <div class="card kpi"><div class="muted">Active users</div><div class="value" id="kpi-users">—</div></div>
+      <div class="card kpi"><div class="muted">Orders</div><div class="value" id="kpi-orders">—</div></div>
+      <div class="card kpi"><div class="muted">Error rate</div><div class="value" id="kpi-errors">—</div></div>
+    </section>
+    <div id="export-status" role="status" aria-live="polite"></div>
+  </main>
+  <script>
+    // Fictional metrics. Deterministic so that checks are reproducible.
+    const DATA = {
+      "7d": { users: 1284, orders: 312, errors: "0.42%" },
+      "30d": { users: 4971, orders: 1307, errors: "0.38%" },
+    };
+    let refreshes = 0;
+
+    function render() {
+      const d = DATA[document.getElementById("range").value];
+      document.getElementById("kpi-users").textContent = d.users.toLocaleString("en-US");
+      document.getElementById("kpi-orders").textContent = d.orders.toLocaleString("en-US");
+      document.getElementById("kpi-errors").textContent = d.errors;
+    }
+
+    function toCsv(range) {
+      const d = DATA[range];
+      return "metric,value\nactive_users," + d.users + "\norders," + d.orders + "\nerror_rate," + d.errors + "\n";
+    }
+
+    document.getElementById("range").addEventListener("change", render);
+
+    document.getElementById("refresh").addEventListener("click", () => {
+      refreshes += 1;
+      render();
+      document.getElementById("last-updated").textContent = "Last updated: refresh #" + refreshes;
+    });
+
+    // INTENTIONAL REGRESSION for the QA scenario: the export handler calls a helper that was
+    // renamed in a "refactor" (buildCsv -> toCsv). Clicking the button throws a TypeError in the
+    // console and the user gets no feedback. The expected behaviour is an "Export ready" banner.
+    document.getElementById("export").addEventListener("click", () => {
+      const range = document.getElementById("range").value;
+      const csv = window.buildCsv(range); // TypeError: window.buildCsv is not a function
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      document.getElementById("export-status").innerHTML =
+        '<p class="banner ok">Export ready: <a download="metrics-' + range + '.csv" href="' + url + '">metrics-' + range + ".csv</a></p>";
+    });
+
+    render();
+  </script>
+</body>
+</html>

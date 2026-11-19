@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northwind Gear – Cart</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="shop.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Your cart</h1>
+    <div id="cart" class="card"></div>
+  </main>
+  <script>
+    mountHeader();
+    function render() {
+      const cart = getCart();
+      const root = document.getElementById("cart");
+      if (cart.length === 0) {
+        root.innerHTML = '<p>Your cart is empty.</p><p><a href="index.html">Continue shopping</a></p>';
+        return;
+      }
+      const rows = cart
+        .map((l) => {
+          const p = CATALOG.find((x) => x.id === l.id);
+          return `<tr data-product-id="${l.id}"><td>${p.name}</td><td>${l.qty}</td><td>${money(p.price * l.qty)}</td>
+            <td><button class="secondary" data-remove="${l.id}" aria-label="Remove ${p.name}">Remove</button></td></tr>`;
+        })
+        .join("");
+      root.innerHTML = `
+        <table aria-label="Cart items">
+          <thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p class="price" id="cart-total">Total: ${money(cartTotal())}</p>
+        <p><a href="checkout.html">Proceed to checkout</a></p>`;
+      root.querySelectorAll("[data-remove]").forEach((b) =>
+        b.addEventListener("click", () => {
+          saveCart(getCart().filter((l) => l.id !== b.dataset.remove));
+          render();
+        })
+      );
+    }
+    render();
+  </script>
+</body>
+</html>

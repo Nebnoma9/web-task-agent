@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helpdesk – New ticket</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="support.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Open a support ticket</h1>
+    <form id="ticket-form" class="card" aria-label="New ticket" novalidate>
+      <label for="subject">Subject</label>
+      <input id="subject" name="subject" maxlength="120">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="">Select a category</option>
+        <option>Billing</option>
+        <option>Technical issue</option>
+        <option>Account access</option>
+        <option>Other</option>
+      </select>
+      <fieldset style="border:0;padding:0;margin:10px 0 0">
+        <legend><strong>Priority</strong></legend>
+        <label style="display:inline;font-weight:400"><input type="radio" name="priority" value="Low" checked> Low</label>
+        <label style="display:inline;font-weight:400;margin-left:12px"><input type="radio" name="priority" value="Normal"> Normal</label>
+        <label style="display:inline;font-weight:400;margin-left:12px"><input type="radio" name="priority" value="High"> High</label>
+      </fieldset>
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="5"></textarea>
+      <p id="ticket-error" class="error" role="alert"></p>
+      <button type="submit">Submit ticket</button>
+    </form>
+  </main>
+  <script>
+    const session = requireSession();
+    mountHeader(session);
+    document.getElementById("ticket-form").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const subject = document.getElementById("subject").value.trim();
+      const category = document.getElementById("category").value;
+      const description = document.getElementById("description").value.trim();
+      const priority = document.querySelector('input[name="priority"]:checked').value;
+      const err = document.getElementById("ticket-error");
+      if (subject.length < 5) return (err.textContent = "Subject must be at least 5 characters.");
+      if (!category) return (err.textContent = "Please select a category.");
+      if (description.length < 20) return (err.textContent = "Description must be at least 20 characters.");
+      const tickets = getTickets();
+      const id = "TCK-" + (1001 + tickets.length);
+      tickets.push({ id, subject, category, priority, description, status: "Open", owner: session.username });
+      saveTickets(tickets);
+      location.href = "tickets.html?created=" + id;
+    });
+  </script>
+</body>
+</html>

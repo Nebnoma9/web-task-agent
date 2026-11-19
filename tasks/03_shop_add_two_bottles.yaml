@@ -1,0 +1,28 @@
+id: shop-add-quantity
+title: Add two units of a product to the cart
+kind: automation
+tags: [shop, cart, form]
+start_url: /shop/index.html
+goal: >-
+  Add 2 units of the "Trail Water Bottle" to the cart in the Northwind Gear shop and confirm
+  the cart counter shows 2 items.
+max_steps: 12
+success:
+  - type: local_storage
+    key: nw_cart
+    path: "0.id"
+    equals: p-301
+  - type: local_storage
+    key: nw_cart
+    path: "0.qty"
+    equals: 2
+  - type: text_visible
+    text: Cart (2)
+scripted_plan:
+  - {type: fill, target: {role: searchbox, name: Search products}, text: bottle}
+  - {type: press, target: {role: searchbox, name: Search products}, key: Enter}
+  - {type: click, target: {role: link, name: Trail Water Bottle}}
+  - {type: fill, target: {role: spinbutton, name: Quantity}, text: "2"}
+  - {type: click, target: {role: button, name: Add to cart}}
+  - {type: assert_text, text: Cart (2)}
+  - {type: done, success: true, summary: "Added 2 × Trail Water Bottle; cart shows Cart (2)."}

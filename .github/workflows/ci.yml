@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.12 and dependencies
+        run: |
+          uv python install 3.12
+          uv sync --frozen --extra dev
+
+      - name: Install Chromium for Playwright
+        run: uv run playwright install --with-deps chromium
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Type-check
+        run: uv run mypy
+
+      - name: Tests (unit + headless end-to-end)
+        run: uv run pytest -q
+
+      # The scripted policy validates the harness (browser control, guardrails, checks,
+      # tracing, reporting) - not model quality. No API key is used in CI.
+      - name: Scripted task suite
+        run: uv run wta run tasks/ --policy scripted --repeat 3 --report out --min-success 1.0
+
+      - name: Upload run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wta-report
+          path: out/
+          retention-days: 14

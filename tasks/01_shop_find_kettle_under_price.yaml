@@ -1,0 +1,24 @@
+id: shop-find-kettle-under-price
+title: Find the kettle priced under €40 and open its product page
+kind: automation
+tags: [shop, search]
+start_url: /shop/index.html
+goal: >-
+  In the Northwind Gear shop, search for "kettle" and open the product page of the kettle that
+  costs less than €40. Then finish and report the product name and price.
+max_steps: 10
+success:
+  - type: url_contains
+    value: product.html?id=p-202
+    description: on the product page of the only kettle under €40
+  - type: text_visible
+    text: Compact Travel Kettle
+  - type: summary_mentions
+    keywords: [Compact Travel Kettle]
+    description: the agent reports the right product
+scripted_plan:
+  - {type: fill, target: {role: searchbox, name: Search products}, text: kettle}
+  - {type: press, target: {role: searchbox, name: Search products}, key: Enter}
+  - {type: click, target: {role: link, name: Compact Travel Kettle}}
+  - {type: assert_text, text: "€34.90"}
+  - {type: done, success: true, summary: "Opened Compact Travel Kettle (€34.90), the only kettle under €40."}

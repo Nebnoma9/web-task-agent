@@ -1,0 +1,29 @@
+id: shop-checkout-email-validation
+title: "QA: checkout rejects an invalid email address"
+kind: qa
+tags: [shop, checkout, validation, qa]
+start_url: /shop/checkout.html
+goal: >-
+  QA check on the Northwind Gear checkout page. Fill in name "QA Bot", email "jane.doe@invalid"
+  (deliberately invalid) and address "1 Test Street", leave the payment fields empty, and press
+  "Place order". The expected behaviour is an email validation error and no order confirmation.
+  Finish with success=true if the site behaves as expected, success=false if it does not.
+max_steps: 12
+success:
+  - type: agent_verdict
+    expected: true
+    description: ground truth - the validation works
+  - type: text_visible
+    text: Please enter a valid email address.
+  - type: local_storage
+    key: nw_last_order
+    exists: false
+    description: no order was placed
+scripted_plan:
+  - {type: fill, target: {role: textbox, name: Full name}, text: QA Bot}
+  - {type: fill, target: {role: textbox, name: Email}, text: jane.doe@invalid}
+  - {type: fill, target: {role: textbox, name: Street address}, text: 1 Test Street}
+  - {type: click, target: {role: button, name: Place order}}
+  - {type: assert_text, text: Please enter a valid email address.}
+  - {type: assert_text, text: Order confirmed, present: false}
+  - {type: done_from_checks, summary: "Invalid email validation check"}

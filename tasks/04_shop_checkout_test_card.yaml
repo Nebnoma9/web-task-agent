@@ -1,0 +1,47 @@
+id: shop-checkout-test-card
+title: Buy a mug with test payment data and verify the confirmation
+kind: automation
+tags: [shop, checkout, payment, form]
+start_url: /shop/product.html?id=p-302
+# Explicit opt-in: this task may fill payment fields, and only with public test card numbers.
+allow_test_payment_data: true
+goal: >-
+  Buy one "Insulated Camping Mug" in the Northwind Gear demo shop. Check out with these test
+  details: name "Jane Tester", email "jane.tester@example.com", address "12 Rue des Tests, Lyon",
+  country France, test card 4242 4242 4242 4242, expiry 12/30, CVC 123. Verify that the order
+  is confirmed and report the order number.
+max_steps: 20
+success:
+  - type: text_visible
+    text: Order confirmed
+  - type: local_storage
+    key: nw_last_order
+    path: orderId
+    contains: NW-
+    description: an order was recorded
+  - type: local_storage
+    key: nw_last_order
+    path: "items.0.id"
+    equals: p-302
+  - type: local_storage
+    key: nw_last_order
+    path: cardLast4
+    equals: "4242"
+    description: the public test card was used
+  - type: summary_mentions
+    keywords: [NW-]
+    description: the agent reports the order number
+scripted_plan:
+  - {type: click, target: {role: button, name: Add to cart}}
+  - {type: click, target: {role: link, name: Cart (1)}}
+  - {type: click, target: {role: link, name: Proceed to checkout}}
+  - {type: fill, target: {role: textbox, name: Full name}, text: Jane Tester}
+  - {type: fill, target: {role: textbox, name: Email}, text: jane.tester@example.com}
+  - {type: fill, target: {role: textbox, name: Street address}, text: "12 Rue des Tests, Lyon"}
+  - {type: select, target: {role: combobox, name: Country}, option: France}
+  - {type: fill, target: {role: textbox, name: Card number}, text: "4242 4242 4242 4242"}
+  - {type: fill, target: {role: textbox, name: Expiry (MM/YY)}, text: "12/30"}
+  - {type: fill, target: {role: textbox, name: CVC}, text: "123"}
+  - {type: click, target: {role: button, name: Place order}}
+  - {type: wait_for, text: Order confirmed}
+  - {type: done, success: true, summary: "Order confirmed: NW-1001 for one Insulated Camping Mug."}

@@ -1,0 +1,26 @@
+id: support-login
+title: Sign in to the support portal with demo credentials
+kind: automation
+tags: [support, login, secrets]
+start_url: /support/login.html
+goal: >-
+  Sign in to the Helpdesk portal with username "demo.agent" and password
+  "{{secret:support_password}}", then confirm you are signed in.
+max_steps: 8
+secrets:
+  support_password: {fixture: sites/support/demo_users.json, path: users.0.password}
+success:
+  - type: url_contains
+    value: tickets.html
+  - type: text_visible
+    text: Signed in as demo.agent
+  - type: local_storage
+    key: hd_session
+    path: username
+    equals: demo.agent
+scripted_plan:
+  - {type: fill, target: {role: textbox, name: Username}, text: demo.agent}
+  - {type: fill, target: {role: textbox, name: Password}, text: "{{secret:support_password}}"}
+  - {type: click, target: {role: button, name: Sign in}}
+  - {type: wait_for, text: "Welcome, Demo Agent"}
+  - {type: done, success: true, summary: "Signed in as demo.agent; the ticket list is shown."}

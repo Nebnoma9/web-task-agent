@@ -1,0 +1,10 @@
+{
+  "_comment": "Fictional demo credentials for the local Helpdesk demo site. Not real accounts.",
+  "users": [
+    {
+      "username": "demo.agent",
+      "password": "Helpdesk-Demo-2026!",
+      "display_name": "Demo Agent"
+    }
+  ]
+}

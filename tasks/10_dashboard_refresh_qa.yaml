@@ -1,0 +1,26 @@
+id: dashboard-refresh-and-range
+title: "QA: refresh and range filter work"
+kind: qa
+tags: [dashboard, qa]
+start_url: /dashboard/index.html
+goal: >-
+  QA check on the Ops Metrics dashboard: (1) clicking "Refresh data" should change the status
+  line to "Last updated: refresh #1"; (2) switching the range to "Last 30 days" should change
+  the Active users KPI to 4,971. Finish with success=true if both work, success=false (with
+  details) if either does not.
+max_steps: 10
+success:
+  - type: agent_verdict
+    expected: true
+  - type: selector_text
+    selector: "#last-updated"
+    contains: refresh #1
+  - type: selector_text
+    selector: "#kpi-users"
+    contains: "4,971"
+scripted_plan:
+  - {type: click, target: {role: button, name: Refresh data}}
+  - {type: assert_text, text: "Last updated: refresh #1"}
+  - {type: select, target: {role: combobox, name: Range}, option: Last 30 days}
+  - {type: assert_text, text: "4,971"}
+  - {type: done_from_checks, summary: "Refresh + range filter check"}

@@ -1,0 +1,32 @@
+id: shop-cheapest-headphones-to-cart
+title: Add the cheapest headphones to the cart
+kind: automation
+tags: [shop, search, sort, cart]
+start_url: /shop/index.html
+goal: >-
+  In the Northwind Gear shop, search for "headphones", find the cheapest pair of headphones in the
+  results, and add exactly one unit of it to the cart.
+max_steps: 12
+success:
+  - type: local_storage
+    key: nw_cart
+    path: "0.id"
+    equals: p-104
+    description: the cheapest headphones (Basic Wired Headphones, €19.50) are in the cart
+  - type: local_storage
+    key: nw_cart
+    path: "0.qty"
+    equals: 1
+  - type: local_storage
+    key: nw_cart
+    path: "1"
+    exists: false
+    description: nothing else was added
+scripted_plan:
+  - {type: fill, target: {role: searchbox, name: Search products}, text: headphones}
+  - {type: press, target: {role: searchbox, name: Search products}, key: Enter}
+  - {type: select, target: {role: combobox, name: Sort by}, option: "Price: low to high"}
+  - {type: click, target: {role: link, name_contains: Headphones, nth: 0}}
+  - {type: click, target: {role: button, name: Add to cart}}
+  - {type: wait_for, text: "Added 1 ×"}
+  - {type: done, success: true, summary: "Sorted by price and added Basic Wired Headphones (€19.50) to the cart."}

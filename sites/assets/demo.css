@@ -1,0 +1,52 @@
+/* Shared styling for the fictional demo sites. Plain CSS, no build step. */
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --ink: #1d2330;
+  --muted: #5b6475;
+  --accent: #2f5bd3;
+  --danger: #b42318;
+  --ok: #157f3b;
+  --line: #dde1e8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.site {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 24px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+header.site a { color: var(--ink); text-decoration: none; font-weight: 600; }
+header.site nav a { margin-left: 16px; font-weight: 500; color: var(--accent); }
+main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.price { font-weight: 700; }
+.muted { color: var(--muted); }
+label { display: block; margin: 10px 0 4px; font-weight: 500; }
+input, select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit;
+}
+input[type="checkbox"], input[type="radio"] { width: auto; }
+button {
+  padding: 8px 14px; border-radius: 6px; border: 1px solid var(--accent);
+  background: var(--accent); color: #fff; font: inherit; cursor: pointer;
+}
+button.secondary { background: #fff; color: var(--accent); }
+.error { color: var(--danger); font-size: 14px; }
+.success { color: var(--ok); font-weight: 600; }
+.row { display: flex; gap: 12px; align-items: end; }
+.row > * { flex: 1; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.kpi .value { font-size: 28px; font-weight: 700; }
+.toolbar { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+.banner { padding: 10px 12px; border-radius: 6px; margin: 12px 0; }
+.banner.ok { background: #e7f6ec; color: var(--ok); }
+.banner.err { background: #fdecea; color: var(--danger); }
+@media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } .row { flex-direction: column; } }

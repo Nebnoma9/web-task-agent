@@ -1,0 +1,39 @@
+id: support-submit-ticket
+title: Submit a high-priority billing ticket
+kind: automation
+tags: [support, login, form, secrets]
+start_url: /support/login.html
+goal: >-
+  Sign in to the Helpdesk portal (username "demo.agent", password "{{secret:support_password}}")
+  and open a new support ticket: subject "Invoice shows wrong VAT rate", category Billing,
+  priority High, description "Invoice INV-2026-0042 applies 20% VAT instead of 5.5% for books."
+  Confirm the ticket appears in "My tickets" and report its ID.
+max_steps: 16
+secrets:
+  support_password: {fixture: sites/support/demo_users.json, path: users.0.password}
+success:
+  - type: selector_text
+    selector: "tr[data-ticket-id] .subject"
+    contains: Invoice shows wrong VAT rate
+  - type: local_storage
+    key: hd_tickets
+    path: "0.category"
+    equals: Billing
+  - type: local_storage
+    key: hd_tickets
+    path: "0.priority"
+    equals: High
+  - type: summary_mentions
+    keywords: [TCK-1001]
+scripted_plan:
+  - {type: fill, target: {role: textbox, name: Username}, text: demo.agent}
+  - {type: fill, target: {role: textbox, name: Password}, text: "{{secret:support_password}}"}
+  - {type: click, target: {role: button, name: Sign in}}
+  - {type: click, target: {role: link, name: New ticket}}
+  - {type: fill, target: {role: textbox, name: Subject}, text: Invoice shows wrong VAT rate}
+  - {type: select, target: {role: combobox, name: Category}, option: Billing}
+  - {type: click, target: {role: radio, name: High}}
+  - {type: fill, target: {role: textbox, name: Description}, text: "Invoice INV-2026-0042 applies 20% VAT instead of 5.5% for books."}
+  - {type: click, target: {role: button, name: Submit ticket}}
+  - {type: wait_for, text: Ticket TCK-1001 was created}
+  - {type: done, success: true, summary: "Created ticket TCK-1001 (Billing, High); it is listed in My tickets."}

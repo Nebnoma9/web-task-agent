@@ -1,0 +1,25 @@
+id: dashboard-export-regression
+title: "QA: detect that the dashboard CSV export is broken"
+kind: qa
+tags: [dashboard, qa, regression]
+start_url: /dashboard/index.html
+goal: >-
+  QA check on the Ops Metrics dashboard: clicking "Export CSV" should show an "Export ready"
+  confirmation with a download link. Verify this. Finish with success=true if export works, or
+  success=false with a short description of the defect (what you clicked, what you expected,
+  what happened) if it does not.
+max_steps: 8
+success:
+  - type: agent_verdict
+    expected: false
+    description: ground truth - the export handler throws (intentional regression)
+  - type: text_absent
+    text: Export ready
+    description: the regression is still present on the page
+  - type: summary_mentions
+    keywords: [export]
+    description: the defect report names the broken feature
+scripted_plan:
+  - {type: click, target: {role: button, name: Export CSV}}
+  - {type: wait_for, text: Export ready, timeout_ms: 2000}
+  - {type: done_from_checks, summary: "Export CSV check"}

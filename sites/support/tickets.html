@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helpdesk – My tickets</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="support.js"></script>
+</head>
+<body>
+  <main>
+    <h1 id="welcome"></h1>
+    <p id="flash" role="status"></p>
+    <section class="card">
+      <h2 style="margin-top:0">My tickets</h2>
+      <table aria-label="My tickets">
+        <thead><tr><th>ID</th><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th></tr></thead>
+        <tbody id="ticket-rows"></tbody>
+      </table>
+      <p id="empty" class="muted"></p>
+      <p><a href="new-ticket.html">Open a new ticket</a></p>
+    </section>
+  </main>
+  <script>
+    const session = requireSession();
+    mountHeader(session);
+    document.getElementById("welcome").textContent = "Welcome, " + session.name;
+    const created = new URLSearchParams(location.search).get("created");
+    if (created) {
+      const f = document.getElementById("flash");
+      f.className = "banner ok";
+      f.textContent = "Ticket " + created + " was created.";
+    }
+    const tickets = getTickets();
+    document.getElementById("empty").textContent = tickets.length ? "" : "You have no tickets yet.";
+    document.getElementById("ticket-rows").innerHTML = tickets
+      .map(
+        (t) => `<tr data-ticket-id="${t.id}"><td>${t.id}</td><td class="subject">${t.subject}</td>
+          <td class="category">${t.category}</td><td>${t.priority}</td><td>${t.status}</td></tr>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

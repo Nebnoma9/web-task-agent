@@ -1,0 +1,29 @@
+id: support-wrong-password-rejected
+title: "QA: a wrong password is rejected"
+kind: qa
+tags: [support, login, qa, security]
+start_url: /support/login.html
+goal: >-
+  QA check on the Helpdesk sign-in page: try to sign in as "demo.agent" with the wrong password
+  "not-the-password-42". The expected behaviour is an "Invalid username or password." error and
+  no access to the ticket list. Finish with success=true if the site behaves as expected,
+  success=false if it does not.
+max_steps: 8
+success:
+  - type: agent_verdict
+    expected: true
+  - type: text_visible
+    text: Invalid username or password.
+  - type: url_contains
+    value: login.html
+  - type: local_storage
+    key: hd_session
+    exists: false
+    description: no session was created
+scripted_plan:
+  - {type: fill, target: {role: textbox, name: Username}, text: demo.agent}
+  - {type: fill, target: {role: textbox, name: Password}, text: not-the-password-42}
+  - {type: click, target: {role: button, name: Sign in}}
+  - {type: wait_for, text: Invalid username or password., timeout_ms: 3000}
+  - {type: assert_text, text: "Welcome,", present: false}
+  - {type: done_from_checks, summary: "Wrong-password rejection check"}

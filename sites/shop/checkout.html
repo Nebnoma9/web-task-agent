@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northwind Gear – Checkout</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="shop.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Checkout</h1>
+    <p class="banner ok">Demo store: use test card <strong>4242 4242 4242 4242</strong>. Nothing is charged.</p>
+    <p id="order-summary" class="price"></p>
+    <form id="checkout-form" class="card" novalidate aria-label="Checkout">
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend><strong>Shipping</strong></legend>
+        <label for="fullname">Full name</label>
+        <input id="fullname" name="fullname" autocomplete="name" aria-describedby="fullname-error">
+        <p id="fullname-error" class="error" role="alert"></p>
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" aria-describedby="email-error">
+        <p id="email-error" class="error" role="alert"></p>
+
+        <label for="address">Street address</label>
+        <input id="address" name="address" autocomplete="street-address" aria-describedby="address-error">
+        <p id="address-error" class="error" role="alert"></p>
+
+        <label for="country">Country</label>
+        <select id="country" name="country">
+          <option value="">Choose a country</option>
+          <option value="FR">France</option>
+          <option value="DE">Germany</option>
+          <option value="ES">Spain</option>
+          <option value="SN">Senegal</option>
+          <option value="BF">Burkina Faso</option>
+        </select>
+        <p id="country-error" class="error" role="alert"></p>
+      </fieldset>
+      <fieldset style="border:0;padding:0;margin:16px 0 0">
+        <legend><strong>Payment (test mode)</strong></legend>
+        <label for="card-number">Card number</label>
+        <input id="card-number" name="card_number" inputmode="numeric" autocomplete="cc-number" aria-describedby="card-error">
+        <p id="card-error" class="error" role="alert"></p>
+        <div class="row">
+          <div>
+            <label for="card-exp">Expiry (MM/YY)</label>
+            <input id="card-exp" name="card_exp" autocomplete="cc-exp" placeholder="MM/YY">
+          </div>
+          <div>
+            <label for="card-cvc">CVC</label>
+            <input id="card-cvc" name="card_cvc" autocomplete="cc-csc" inputmode="numeric">
+          </div>
+        </div>
+        <p id="exp-error" class="error" role="alert"></p>
+      </fieldset>
+      <p><button type="submit">Place order</button></p>
+    </form>
+    <section id="confirmation" class="card" hidden aria-live="polite">
+      <h2 class="success">Order confirmed</h2>
+      <p>Thank you! Your order number is <strong id="order-id"></strong>.</p>
+      <p>A confirmation was sent to <span id="order-email"></span>.</p>
+      <p><a href="index.html">Back to the shop</a></p>
+    </section>
+  </main>
+  <script>
+    mountHeader();
+    const total = cartTotal();
+    document.getElementById("order-summary").textContent =
+      cartCount() + " item(s), total " + money(total);
+
+    function setErr(id, msg) {
+      document.getElementById(id).textContent = msg || "";
+      return msg ? 1 : 0;
+    }
+
+    document.getElementById("checkout-form").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const v = (id) => document.getElementById(id).value.trim();
+      let errors = 0;
+      errors += setErr("fullname-error", v("fullname").length < 2 ? "Please enter your full name." : "");
+      errors += setErr(
+        "email-error",
+        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v("email")) ? "" : "Please enter a valid email address."
+      );
+      errors += setErr("address-error", v("address").length < 5 ? "Please enter a street address." : "");
+      errors += setErr("country-error", v("country") ? "" : "Please choose a country.");
+      errors += setErr("card-error", luhnValid(v("card-number")) ? "" : "Card number is invalid.");
+      const exp = v("card-exp").match(/^(\d{2})\/(\d{2})$/);
+      let expMsg = "";
+      if (!exp || +exp[1] < 1 || +exp[1] > 12) expMsg = "Expiry must be MM/YY.";
+      else if (2000 + +exp[2] < 2026) expMsg = "Card is expired.";
+      else if (!/^\d{3,4}$/.test(v("card-cvc"))) expMsg = "CVC must be 3 or 4 digits.";
+      errors += setErr("exp-error", expMsg);
+      if (getCart().length === 0) {
+        errors += setErr("card-error", "Your cart is empty.");
+      }
+      if (errors > 0) return;
+
+      const seq = parseInt(localStorage.getItem(ORDER_SEQ_KEY) || "1000", 10) + 1;
+      localStorage.setItem(ORDER_SEQ_KEY, String(seq));
+      const order = {
+        orderId: "NW-" + seq,
+        email: v("email"),
+        total: Math.round(total * 100) / 100,
+        items: getCart(),
+        cardLast4: v("card-number").replace(/\D/g, "").slice(-4),
+      };
+      localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+      saveCart([]);
+      document.getElementById("checkout-form").hidden = true;
+      document.getElementById("order-id").textContent = order.orderId;
+      document.getElementById("order-email").textContent = order.email;
+      document.getElementById("confirmation").hidden = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helpdesk – Sign in</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="support.js"></script>
+</head>
+<body>
+  <main style="max-width:420px">
+    <h1>Sign in to Helpdesk</h1>
+    <form id="login-form" class="card" aria-label="Sign in" novalidate>
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password">
+      <p id="login-error" class="error" role="alert"></p>
+      <button type="submit">Sign in</button>
+    </form>
+  </main>
+  <script>
+    mountHeader(null);
+    document.getElementById("login-form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const u = document.getElementById("username").value.trim();
+      const pw = document.getElementById("password").value;
+      const err = document.getElementById("login-error");
+      err.textContent = "";
+      const fixture = await (await fetch("demo_users.json", { cache: "no-store" })).json();
+      const user = fixture.users.find((x) => x.username === u && x.password === pw);
+      if (!user) {
+        err.textContent = "Invalid username or password.";
+        return;
+      }
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ username: user.username, name: user.display_name }));
+      const next = new URLSearchParams(location.search).get("next");
+      location.href = next && /^[a-z-]+\.html$/.test(next) ? next : "tickets.html";
+    });
+  </script>
+</body>
+</html>

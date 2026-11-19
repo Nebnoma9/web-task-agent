@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>web-task-agent run {{ suite.run_id }}</title>
+<style>
+  :root { --bg:#f7f8fa; --card:#fff; --ink:#1b2130; --muted:#5d6678; --line:#e1e4ea;
+          --ok:#13753a; --okbg:#e6f4ea; --bad:#b3261e; --badbg:#fce8e6; --warn:#8a5a00; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171c; --card:#1c2027; --ink:#e7eaf0; --muted:#9aa3b2; --line:#2c323c;
+            --ok:#6fd08f; --okbg:#173322; --bad:#ff8a80; --badbg:#3a1d1b; --warn:#f2c46d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:32px 0 10px; }
+  .muted { color:var(--muted); }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .tile .v { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line);
+          border-radius:10px; overflow:hidden; }
+  th,td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-weight:600; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  td.num { font-variant-numeric:tabular-nums; text-align:right; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .pass { background:var(--okbg); color:var(--ok); } .fail { background:var(--badbg); color:var(--bad); }
+  details { background:var(--card); border:1px solid var(--line); border-radius:10px; margin:10px 0; }
+  summary { cursor:pointer; padding:10px 14px; font-weight:600; }
+  .ep { padding:0 14px 14px; overflow-x:auto; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; word-break:break-word; }
+  img.shot { width:180px; height:auto; aspect-ratio:1280/800; border:1px solid var(--line); border-radius:6px; }
+  .blocked { color:var(--warn); font-weight:600; }
+  .note { border-left:3px solid var(--line); padding:4px 10px; margin:8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Run report</h1>
+  <p class="muted">Run <code>{{ suite.run_id }}</code> · policy <code>{{ suite.policy }}</code> · started {{ suite.started_at }}</p>
+  {% if suite.policy == "scripted" %}
+  <p class="note">This run used the deterministic <strong>scripted</strong> policy. Its numbers validate the harness
+    (browser control, snapshot, guardrails, success checks), not model quality.</p>
+  {% endif %}
+
+  <div class="tiles">
+    <div class="tile"><div class="muted">Success rate</div><div class="v">{{ overall.success_rate | pct }}</div>
+      <div class="muted">{{ overall.passed }}/{{ overall.episodes }} episodes</div></div>
+    <div class="tile"><div class="muted">Mean steps</div><div class="v">{{ overall.mean_steps }}</div></div>
+    <div class="tile"><div class="muted">p50 / p95 duration</div><div class="v">{{ "%.2f"|format(overall.p50_s) }}s</div>
+      <div class="muted">p95 {{ "%.2f"|format(overall.p95_s) }}s</div></div>
+    <div class="tile"><div class="muted">Tokens (in / out)</div><div class="v">{{ overall.prompt_tokens }}</div>
+      <div class="muted">out {{ overall.completion_tokens }}</div></div>
+    <div class="tile"><div class="muted">Invalid actions / blocks</div><div class="v">{{ overall.invalid_actions }} / {{ overall.guardrail_blocks }}</div></div>
+  </div>
+
+  <h2>Per task</h2>
+  <table>
+    <thead><tr><th>Task</th><th>Kind</th><th>Success</th><th>Mean steps</th><th>p50 (s)</th><th>p95 (s)</th></tr></thead>
+    <tbody>
+    {% for t in tasks %}
+      <tr>
+        <td><code>{{ t.task_id }}</code><br><span class="muted">{{ t.title }}</span></td>
+        <td>{{ t.kind }}</td>
+        <td><span class="pill {{ 'pass' if t.successes == t.runs else 'fail' }}">{{ t.successes }}/{{ t.runs }}</span></td>
+        <td class="num">{{ t.mean_steps }}</td>
+        <td class="num">{{ "%.2f"|format(t.p50_s) }}</td>
+        <td class="num">{{ "%.2f"|format(t.p95_s) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% set failed = episodes | rejectattr("passed") | list %}
+  <h2>Failures ({{ failed | length }})</h2>
+  {% if failed %}
+  <table>
+    <thead><tr><th>Episode</th><th>Status</th><th>Reason</th></tr></thead>
+    <tbody>
+    {% for e in failed %}
+      <tr><td><code>{{ e.task_id }}</code> r{{ e.repeat }}</td><td>{{ e.status }}</td><td>{{ e.failure_reason }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">None.</p>
+  {% endif %}
+
+  <h2>Episodes</h2>
+  {% for e in episodes %}
+  <details>
+    <summary><span class="pill {{ 'pass' if e.passed else 'fail' }}">{{ 'PASS' if e.passed else 'FAIL' }}</span>
+      <code>{{ e.task_id }}</code> r{{ e.repeat }} · {{ e.steps }} steps · {{ "%.2f"|format(e.duration_s) }}s · {{ e.status }}</summary>
+    <div class="ep">
+      <p><strong>Agent claim:</strong> success={{ e.agent_success }} — {{ e.agent_summary }}</p>
+      <p><strong>Harness checks</strong> (independent of the claim):</p>
+      <ul>
+      {% for c in e.checks %}
+        <li><span class="pill {{ 'pass' if c.passed else 'fail' }}">{{ 'ok' if c.passed else 'fail' }}</span>
+          <code>{{ c.type }}</code> {{ c.description }} <span class="muted">{{ c.detail }}</span></li>
+      {% endfor %}
+      </ul>
+      <p class="muted">Trace: <code>{{ e.trace_path }}</code></p>
+      <table>
+        <thead><tr><th>#</th><th>Observation</th><th>Action</th><th>Result</th><th>Latency (ms)</th><th>Screenshot</th></tr></thead>
+        <tbody>
+        {% for s in e.step_log %}
+          <tr>
+            <td class="num">{{ s.step }}</td>
+            <td><code>{{ s.observation }}</code>
+              {% if s.console_errors %}<br><span class="blocked">console: {{ s.console_errors | join("; ") }}</span>{% endif %}
+              {% if s.thought %}<br><span class="muted">{{ s.thought }}</span>{% endif %}</td>
+            <td><code>{{ s.action | compact_json }}</code></td>
+            <td>{% if s.result.blocked_by %}<span class="blocked">BLOCKED ({{ s.result.blocked_by }})</span> {{ s.result.error }}
+                {% elif not s.result.ok %}<span class="pill fail">error</span> {{ s.result.error }}
+                {% else %}{{ s.result.message }}{% if s.result.effect %} <span class="muted">[{{ s.result.effect }}]</span>{% endif %}{% endif %}</td>
+            <td class="num" style="white-space:nowrap">obs {{ s.latency_ms.observe }}<br>pol {{ s.latency_ms.policy }}<br>act {{ s.latency_ms.act }}</td>
+            <td>{% if s.screenshot %}<a href="{{ s.screenshot }}"><img class="shot" loading="lazy" width="180" height="113" src="{{ s.screenshot }}" alt="step {{ s.step }}"></a>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endfor %}
+</main>
+</body>
+</html>
